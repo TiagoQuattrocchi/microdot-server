@@ -1,104 +1,50 @@
-from microdot import Microdot, Response
+from microdot import Microdot, send_file
+from machine import Pin
+from boot import connect_to
+import neopixel
 import network
 from time import sleep
-from machine import Pin, SoftI2C
-from neopixel import NeoPixel
 
-i2c = SoftI2C(sda=Pin(21), scl=Pin(22))
 
-led1 = Pin(32, Pin.OUT)
-led2 = Pin(33, Pin.OUT)
-led3 = Pin(25, Pin.OUT)
+led1 = Pin(32, Pin.OUT, value=0)
+led2 = Pin(33, Pin.OUT, value=0)
+led3 = Pin(25, Pin.OUT, value=0)
 
-led1.value(0)
-led2.value(0)
-led3.value(0)
-
-np = NeoPixel(Pin(27), 4)  
+rgb = neopixel.NeoPixel(Pin(27), 4)
 for i in range(4):
-    np[i] = (50, 50, 50)
-np.write()
+    rgb[i] = (0, 0, 0)
 
-def connect_wifi(ssid, password):
-    sta_if = network.WLAN(network.STA_IF)
-    sta_if.active(True)
-    if not sta_if.isconnected():
-        print('Conectando a la red...')
-        sta_if.connect(ssid, password)
-        while not sta_if.isconnected():
-            print(".", end="")
-            sleep(0.5)
-    print('Configuración de red:', sta_if.ifconfig())
-    return sta_if.ifconfig()[0]
-
-WIFI_SSID = "Cooperadora Alumnos"
-WIFI_PASSWORD = ""
-
-try:
-    ip = connect_wifi(WIFI_SSID, WIFI_PASSWORD)
-except Exception as e:
-    print("Error", e)
-
+rgb.write()
+connect_to()
 app = Microdot()
-Response.default_content_type = 'text/html'
 
 @app.route('/')
-def index(request):
-    with open('index.html', 'r') as file:
-        html = file.read()
+async def index(request):
+    return send_file('index.html')
+
+@app.route('/<dir>/<file>')
+async def static(request, dir, file):
+    return send_file("/{}/{}".format(dir, file))
+
+@app.route('/led/toggle/<led>')
+async def led_toggle(request, led):
+    global led1, led2, led3
     
-    variables = {
-        '{{#}}': "Actividad 2",
-        '{{Mensaje}}': "LEDs",
-        '{{Alumno}}': "Tiago Quattrocchi"
-    }
-    
-    for placeholder, valor in variables.items():
-        html = html.replace(placeholder, valor)
-    
-    return html
-
-@app.route('/styles/base.css')
-def serve_css(request):
-    with open('styles/base.css', 'r') as f:
-        return f.read(), 200, {'Content-Type': 'text/css'}
-
-@app.route('/scripts/base.js')
-def serve_js(request):
-    with open('scripts/base.js', 'r') as f:
-        return f.read(), 200, {'Content-Type': 'application/javascript'}
-
-@app.route('/led/<led_num>/toggle')
-def toggle_led(request, led_num):
-    try:
-        led_num = int(led_num)
-        if led_num == 1:
-            led1.value(not led1.value())
-            return str(led1.value())
-        elif led_num == 2:
-            led2.value(not led2.value())
-            return str(led2.value())
-        elif led_num == 3:
-            led3.value(not led3.value())
-            return str(led3.value())
-        else:
-            return "LED incorrecto", 400
-    except Exception as e:
-        return f"Error: {str(e)}", 500
-
-@app.route('/neopixel/<r>/<g>/<b>')
-def set_neopixel(request, r, g, b):
-    try:
-        r = max(0, min(255, int(r)))
-        g = max(0, min(255, int(g)))
-        b = max(0, min(255, int(b)))
+    if led == 'LED1':
+        led1.value(not led1.value())
+    elif led == 'LED2':
+        led2.value(not led2.value())
+    elif led == 'LED3':
+        led3.value(not led3.value())
         
-        for i in range(4):
-            np[i] = (r, g, b)
-        np.write()
-        
-        return f"OK: {r},{g},{b}", 200
-    except Exception as e:
-        return f"Error: {str(e)}", 500
+    return {"status":"OK"}
 
-app.run(host=ip, port=80, debug=True)
+@app.route('/rgbled/change/<int:red>/<int:green>/<int:blue>')
+async def rgb_led(request, red, green, blue):
+    global rgb
+    for pixel in range(4):
+        rgb[pixel] = (red, green, blue)
+    rgb.write()
+    return {"status": "OK"}
+
+app.run(port=80)
