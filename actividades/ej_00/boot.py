@@ -1,15 +1,4 @@
-def connect_to(ssid, passwd) -> None:
-
-    """Conecta el microcontrolador a la red indicada.
-
-    Parameters
-    ----------
-    ssid : str
-        Nombre de la red a conectarse
-    passwd : str
-        Contraseña de la red
-    """
-    
+def connect_to(ssid, passwd) -> None:   
     import network
     from time import sleep
     
