@@ -11,13 +11,14 @@
     <header>
         <h1>Actividad #3</h1>
     </header>
-        <div id="mostrartemp">
-            Temperatura: <span id="mostrar-temperatura"></span> °C
-        </div>
 
         <label for="setpoint-slider">Setpoint:</label>
         <input type="range" id="setpoint-slider" min="0" max="100" value="100" oninput="updateSetpointValue(this.value)">
         <span id="setpoint-value"></span> °C
+
+        <div id="mostrartemp">
+            Temperatura: <span id="mostrar-temperatura"></span> °C
+        </div>
         
         <div id="estado-buzzer">
             Buzzer: <span id="estado-buzzer"></span>

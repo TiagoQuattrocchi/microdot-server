@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fechaElemento.textContent = fechaActual.toLocaleDateString('es-ES', opcionesFecha);
 });
 
-
 async function readTemperature() {
     const data = await fetchData('/sensors/ds18b20/read');
     if (data) {
